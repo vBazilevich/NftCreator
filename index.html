@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+        <title>NFT Factory</title>
+        <meta name='viewport' content='width=device-width, initial-scale=1'>
+        <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    </head>
+    <body>
+        <h1>Blockchain Week 06 NFT Generator</h1>
+        <h2>Vladimir Bazilevich</h2>
+        <hr>
+
+        <h3>NFT collections</h3>
+
+        <p id='col_status'>Loading...</p>
+        <hr>
+
+        <h3>User collections</h3>
+
+        <p id='status'>Loading...</p>
+        <hr>
+
+        <h3>Create NFT</h3>
+        <form>
+            <label for='NFTname'>NFT name:</label>
+            <input type='text' id='NFTname' name='NFTname'><br>
+        </form>
+        <form>
+            <label for='NFTsymbol'>NFT symbol:</label>
+            <input type='text' id='NFTsymbol' name='NFTsymbol'><br>
+        </form>
+        <button onclick='createNFT();'>Create NFT</button>
+        <hr>
+
+        <h3>Mint NFT</h3>
+        <form>
+            <label for='tokenCID'>IMG CID (please, host on pinata.cloud):</label>
+            <input type='text' id='tokenCID' name='tokenCID'><br>
+        </form>
+        <button onclick='mintNFT();'>Mint NFT</button>
+        <hr>
+
+        <script type='text/javascript'>
+            async function loadWeb3() {
+                if (window.ethereum) {
+                    window.web3 = new Web3(window.ethereum);
+                    window.ethereum.enable();
+                    console.log('Connected to MetaMask wallet');
+                } else {
+                    console.log('Can\'t connect to MetaMask wallet');
+                }
+            }
+
+            async function load() {
+                await loadWeb3();
+                window.contract = await loadContract();
+                await displayCollections();
+                await displayNFT();
+            }
+
+            function updateStatus(status) {
+                const statusEl = document.getElementById('status');
+                statusEl.innerHTML = status;
+                console.log(status);
+            }
+
+            function updateColStatus(status) {
+                const statusEl = document.getElementById('col_status');
+                statusEl.innerHTML = status;
+                console.log(status);
+            }
+
+            async function loadContract() {
+                return await new window.web3.eth.Contract(
+                    [
+                        {
+                            "anonymous": false,
+                            "inputs": [
+                                {
+                                    "indexed": true,
+                                    "internalType": "address",
+                                    "name": "previousOwner",
+                                    "type": "address"
+                                },
+                                {
+                                    "indexed": true,
+                                    "internalType": "address",
+                                    "name": "newOwner",
+                                    "type": "address"
+                                }
+                            ],
+                            "name": "OwnershipTransferred",
+                            "type": "event"
+                        },
+                        {
+                            "inputs": [
+                                {
+                                    "internalType": "string",
+                                    "name": "name",
+                                    "type": "string"
+                                },
+                                {
+                                    "internalType": "string",
+                                    "name": "symbol",
+                                    "type": "string"
+                                }
+                            ],
+                            "name": "addNFT",
+                            "outputs": [],
+                            "stateMutability": "payable",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [],
+                            "name": "getNFTsymbol",
+                            "outputs": [
+                                {
+                                    "internalType": "string",
+                                    "name": "",
+                                    "type": "string"
+                                }
+                            ],
+                            "stateMutability": "view",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [
+                                {
+                                    "internalType": "string",
+                                    "name": "uri",
+                                    "type": "string"
+                                }
+                            ],
+                            "name": "mintNFT",
+                            "outputs": [],
+                            "stateMutability": "payable",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [],
+                            "name": "owner",
+                            "outputs": [
+                                {
+                                    "internalType": "address",
+                                    "name": "",
+                                    "type": "address"
+                                }
+                            ],
+                            "stateMutability": "view",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [],
+                            "name": "renounceOwnership",
+                            "outputs": [],
+                            "stateMutability": "nonpayable",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "tokenId",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "name": "retrieveNFT",
+                            "outputs": [
+                                {
+                                    "internalType": "string",
+                                    "name": "",
+                                    "type": "string"
+                                }
+                            ],
+                            "stateMutability": "view",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [],
+                            "name": "retrieveNFTCollections",
+                            "outputs": [
+                                {
+                                    "components": [
+                                        {
+                                            "internalType": "string",
+                                            "name": "name",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "internalType": "string",
+                                            "name": "symbol",
+                                            "type": "string"
+                                        }
+                                    ],
+                                    "internalType": "struct NftCreator.CollectionInfo[]",
+                                    "name": "",
+                                    "type": "tuple[]"
+                                }
+                            ],
+                            "stateMutability": "view",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [],
+                            "name": "retrieveNumberOfNFT",
+                            "outputs": [
+                                {
+                                    "internalType": "uint256",
+                                    "name": "",
+                                    "type": "uint256"
+                                }
+                            ],
+                            "stateMutability": "view",
+                            "type": "function"
+                        },
+                        {
+                            "inputs": [
+                                {
+                                    "internalType": "address",
+                                    "name": "newOwner",
+                                    "type": "address"
+                                }
+                            ],
+                            "name": "transferOwnership",
+                            "outputs": [],
+                            "stateMutability": "nonpayable",
+                            "type": "function"
+                        }
+                    ],
+                    '0x411798A8b690d556344E9E25573cC7166685C985');
+            }
+
+            async function getCurrentAccount() {
+                const accounts = await window.web3.eth.getAccounts();
+                return accounts[0];
+            }
+
+            async function displayNFT() {
+                const account = await getCurrentAccount();
+                const total = await window.contract.methods.retrieveNumberOfNFT().call({from: account});
+                all = "Symbol: " + await window.contract.methods.getNFTsymbol().call({from: account}) + "<br>";
+                for (let i = 0; i < total; i++) {
+                    uri = await window.contract.methods.retrieveNFT(i).call({from: account});
+                    all += "Number: " + i + "<br>  --> URI " + uri + "<br>";
+                }
+                updateStatus(all);
+            }
+
+            async function displayCollections() {
+                const total = await window.contract.methods.retrieveNFTCollections().call();
+                all = "";
+                for (let i = 0; i < total.length; i++) {
+                    all += "Collection symbol: " + total[i] + "<br>";
+                }
+                updateColStatus(all);
+            }
+
+            async function createNFT() {
+                const account = await getCurrentAccount();
+                await window.contract.methods.addNFT(NFTname.value, NFTsymbol.value).send({from: account});
+            }
+
+                async function mintNFT() {
+                const account = await getCurrentAccount();
+                await window.contract.methods.mintNFT(tokenCID.value).send({from: account});
+                displayNFT();
+                }
+
+                window.addEventListener('load', async () => {
+                    if (window.ethereum) {
+                        window.web3 = new Web3(ethereum);
+                        try {
+                            await ethereum.enable();
+                            web3.eth.sendTransaction({/* ... */});
+                        } catch (error) {
+                            // Denied
+                        }
+                    }
+                    else if (window.web3) {
+                        window.web3 = new Web3(web3.currentProvider);
+                        web3.eth.sendTransaction({/* ... */});
+                    }
+                    else {
+                        console.log('You should consider trying MetaMask!');
+                    }
+                });
+
+            load();
+        </script>
+    </body>
+</html>
